@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Hệ thống đặt lịch</title>
+
+<style>
+body{
+    font-family:'Segoe UI';
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    margin:0;
+    padding:20px;
+}
+
+.container{
+    max-width:1100px;
+    margin:auto;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+}
+
+.box{
+    background:white;
+    padding:15px;
+    border-radius:12px;
+    box-shadow:0 5px 20px rgba(0,0,0,0.2);
+}
+
+h2{text-align:center;}
+
+input,select{
+    width:100%;
+    padding:8px;
+    margin:5px 0;
+    border-radius:6px;
+}
+
+button{
+    padding:8px;
+    border:none;
+    border-radius:6px;
+    background:#667eea;
+    color:white;
+    cursor:pointer;
+}
+
+.card{
+    background:#f5f5f5;
+    padding:10px;
+    margin-top:10px;
+    border-radius:8px;
+}
+
+.badge{
+    padding:3px 6px;
+    border-radius:5px;
+    color:white;
+}
+
+.wait{background:orange;}
+.ok{background:green;}
+.done{background:blue;}
+.cancel{background:red;}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="box">
+<h2>Nhân viên</h2>
+<input id="tenNV" placeholder="Tên">
+<input id="max" placeholder="Số khách/ngày">
+<input id="lich" placeholder="Lịch làm">
+<button onclick="addNV()">Thêm</button>
+<div id="listNV"></div>
+</div>
+
+<div class="box">
+<h2>Dịch vụ</h2>
+<input id="tenDV" placeholder="Tên">
+<input id="gia" placeholder="Giá">
+<input id="time" placeholder="Thời gian">
+<button onclick="addDV()">Thêm</button>
+<div id="listDV"></div>
+</div>
+
+<div class="box">
+<h2>Đặt lịch</h2>
+<input id="tenKH" placeholder="Tên khách">
+<input type="date" id="date">
+<input type="time" id="timeBook">
+<select id="staff"></select>
+<select id="service"></select>
+<button onclick="book()">Đặt lịch</button>
+<div id="list"></div>
+</div>
+
+<div class="box">
+<h2>Thống kê</h2>
+<div id="stats"></div>
+</div>
+
+</div>
+
+<script>
+
+let nhanviens=[], dichvus=[], bookings=[]
+
+// NHÂN VIÊN
+function addNV(){
+let ten=tenNV.value, max=max.value, lich=lich.value
+if(!ten||!max||!lich) return alert("Thiếu dữ liệu")
+nhanviens.push({ten,max,lich,rate:0,count:0})
+renderNV(); updateSelect()
+}
+
+function renderNV(){
+listNV.innerHTML=nhanviens.map((n,i)=>`
+<div class="card">
+<b>${n.ten}</b><br>
+👥 ${n.max} khách<br>
+🕒 ${n.lich}<br>
+⭐ ${n.count? (n.rate/n.count).toFixed(1):0}
+<button onclick="deleteNV(${i})">Xóa</button>
+</div>`).join("")
+}
+
+function deleteNV(i){ nhanviens.splice(i,1); renderNV(); updateSelect() }
+
+// DỊCH VỤ
+function addDV(){
+let ten=tenDV.value, gia=gia.value, time=time.value
+if(!ten||!gia||!time) return alert("Thiếu dữ liệu")
+dichvus.push({ten,gia,time})
+renderDV(); updateSelect()
+}
+
+function renderDV(){
+listDV.innerHTML=dichvus.map((d,i)=>`
+<div class="card">
+<b>${d.ten}</b><br>
+💰 ${d.gia}<br>
+⏱ ${d.time}p
+<button onclick="deleteDV(${i})">Xóa</button>
+</div>`).join("")
+}
+
+function deleteDV(i){ dichvus.splice(i,1); renderDV(); updateSelect() }
+
+// SELECT
+function updateSelect(){
+staff.innerHTML=nhanviens.map(n=>`<option>${n.ten}</option>`).join("")
+service.innerHTML=dichvus.map(d=>`<option>${d.ten}</option>`).join("")
+}
+
+// ĐẶT LỊCH
+function book(){
+let ten=tenKH.value, dateVal=date.value, timeVal=timeBook.value
+let s=staff.value, dv=service.value
+
+let conflict=bookings.find(b=>b.date==dateVal&&b.time==timeVal&&b.staff==s)
+if(conflict) return alert("Trùng lịch!")
+
+bookings.push({ten,date:dateVal,time:timeVal,staff:s,dv,status:"wait"})
+render()
+}
+
+// RENDER
+function render(){
+list.innerHTML=bookings.map((b,i)=>{
+let cls=b.status=="wait"?"wait":b.status=="ok"?"ok":b.status=="done"?"done":"cancel"
+
+return `
+<div class="card">
+<b>${b.ten}</b> - ${b.dv}<br>
+📅 ${b.date} ⏰ ${b.time}<br>
+👨 ${b.staff}
+<span class="badge ${cls}">${b.status}</span><br>
+
+<button onclick="setStatus(${i},'ok')">✔</button>
+<button onclick="setStatus(${i},'done')">Done</button>
+<button onclick="setStatus(${i},'cancel')">✖</button>
+
+${b.status=="done"?`<br>⭐ <input type="number" min="1" max="5" onchange="rate(${i},this.value)">`:""}
+</div>`
+}).join("")
+
+updateStats()
+}
+
+// STATUS
+function setStatus(i,s){ bookings[i].status=s; render() }
+
+// RATE
+function rate(i,val){
+let b=bookings[i]
+let nv=nhanviens.find(n=>n.ten==b.staff)
+nv.rate+=Number(val)
+nv.count++
+renderNV()
+}
+
+// STATS
+function updateStats(){
+let total=bookings.length
+let done=bookings.filter(b=>b.status=="done").length
+let revenue=0
+
+bookings.forEach(b=>{
+if(b.status=="done"){
+let dv=dichvus.find(d=>d.ten==b.dv)
+revenue+=Number(dv.gia)
+}
+})
+
+stats.innerHTML=`
+<p>Tổng lịch: ${total}</p>
+<p>Hoàn thành: ${done}</p>
+<p>Doanh thu: ${revenue} VNĐ</p>`
+}
+
+</script>
+
+</body>
+</html>
