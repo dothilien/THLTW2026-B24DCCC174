@@ -42,7 +42,30 @@
 		icon: 'OrderedListOutlined',
 		component: './TodoList',
 	},
-
+    {
+		path: '/Khamphadiadiem',
+		name: 'Khám phá địa điểm',
+		icon: 'OrderedListOutlined',
+		component: './Khamphadiadiem',
+	},
+	{
+		path: '/Taolichtrinh',
+		name: 'Tạo lịch trình',
+		icon: 'OrderedListOutlined',
+		component: './TaoLichTrinh',
+	},
+	{
+		path: '/quanlyngansach',
+		name: 'Quản lý ngân sách',
+		icon: 'OrderedListOutlined',
+		component: './QuanLyNganSach',
+	},
+	{
+		path: '/Admin',
+		name: 'Admin',
+		icon: 'OrderedListOutlined',
+		component: './Admin',
+	},
 	// DANH MUC HE THONG
 	// {
 	// 	name: 'DanhMuc',
